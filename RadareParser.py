@@ -38,8 +38,8 @@ class Function:
         self.size = dict['size']
         self.realSize = dict['realsz']
         self.calltype = dict['calltype']
-        self.minBound = dict['minbound']
-        self.maxBound = dict['maxbound']
+        # self.minBound = dict['minbound']
+        # self.maxBound = dict['maxbound']
         self.callRefs = {}
         if 'callrefs' in dict:
             for callRef in dict['callrefs']:
@@ -58,14 +58,14 @@ class Function:
                     self.codeXRefs[at].append(address)
                 else:
                     self.codeXRefs[at] = [address]
-        self.numVar = dict['nlocals']
+        # self.numVar = dict['nlocals']
         self.numArgs = dict['nargs']
-        self.bpVars = []
-        for bvar in dict['bpvars']:
-            self.bpVars.append(Var(bvar))
-        self.spVars = []
-        for spvar in dict['spvars']:
-            self.spVars.append(Var(spvar))
+        # self.bpVars = []
+        # for bvar in dict['bpvars']:
+        #     self.bpVars.append(Var(bvar))
+        # self.spVars = []
+        # for spvar in dict['spvars']:
+        #     self.spVars.append(Var(spvar))
         self.cfg = None
         self.changed = False
         self.ira = None
