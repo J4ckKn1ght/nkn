@@ -10,7 +10,7 @@ from Analysis import BinaryAnalysis
 from AsmCFG import AsmCFGView
 from AsmLinear import AsmLinear
 from HexView import HexView
-from InfoView import StringView
+from InfoView import StringView, ImportView, ExportView
 from ListFunctions import ListFuncs
 
 STYLE = 'windowsvista'
@@ -179,6 +179,14 @@ class Window(QMainWindow):
             self.stringView.clicked.connect(self.gotoAddress)
             self.mainTab.addTab(self.stringView, "String List")
 
+            self.importView = ImportView(BinaryAnalysis.binaryInfo.imports)
+            self.importView.clicked.connect(self.gotoLibFunc)
+            self.mainTab.addTab(self.importView, "Imports")
+
+            self.exportView = ExportView(BinaryAnalysis.binaryInfo.exports)
+            self.exportView.clicked.connect(self.gotoLibFunc)
+            self.mainTab.addTab(self.exportView, "Exports")
+
             leftRightSplitter.addWidget(leftTopBottomSplitter)
             leftRightSplitter.addWidget(self.mainTab)
             leftRightSplitter.setStretchFactor(0, 2)
@@ -190,6 +198,12 @@ class Window(QMainWindow):
             topBottomSplitter.setStretchFactor(1, 2)
             allLayout.addWidget(topBottomSplitter)
             self.asmLinear.setFocus()
+
+    def gotoLibFunc(self, name):
+        for func in BinaryAnalysis.funcs:
+            if func.name.endswith(name):
+                self.gotoAsmLinear(func.address)
+                break
 
     def bindAsmLinear(self):
         self.asmLinear.addCFG.connect(self.addAsmCFGView)
@@ -269,7 +283,7 @@ class Window(QMainWindow):
             if hasattr(item, 'instr'):
                 asmCFGView.selectAddress(item.instr.offset, False, False)
         asmCFGView.selectAddress(line.address, True, False)
-        self.addNewTab(asmCFGView, "AsmCFG %s" % line.func.name[0:5])
+        self.addNewTab(asmCFGView, "AsmCFG")
 
     def gotoAsmLinear(self, address):
         index = self.mainTab.indexOf(self.asmLinear)
@@ -330,7 +344,7 @@ class Window(QMainWindow):
                 break
         if newFunc is not None:
             asmCFGView = AsmCFGView(newFunc)
-            self.addNewTab(asmCFGView, "AsmCFG %s" % newFunc.name)
+            self.addNewTab(asmCFGView, "AsmCFG")
             asmCFGView.changeCFG.connect(self.replaceAsmCFG)
             self.mainTab.removeTab(index)
             asmCFGView.setFocus()
@@ -348,7 +362,7 @@ class Window(QMainWindow):
         widget.setFocus()
 
     def saveFile(self):
-        if self.analysis is not None:
+        if BinaryAnalysis.path is not None:
             button_pressed = QMessageBox.question(self, 'Save File', "Do you want to save?",
                                                   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if button_pressed == QMessageBox.Yes:
@@ -357,7 +371,7 @@ class Window(QMainWindow):
                 f.close()
 
     def saveFileAs(self):
-        if self.analysis is not None:
+        if BinaryAnalysis.path is not None:
             name, _ = QFileDialog.getSaveFileName(self, "Save File as")
             if name:
                 f = open(name, 'wb')

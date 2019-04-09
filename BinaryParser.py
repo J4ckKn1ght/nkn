@@ -16,10 +16,10 @@ class Section:
 
 
 class ImportFunction:
-    def __init__(self, name, address, library=None):
+    def __init__(self, name, address, library=''):
         self.name = name
         self.address = address
-        self.libary = library
+        self.library = library
 
 
 class ExporFunction:

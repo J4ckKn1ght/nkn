@@ -365,14 +365,26 @@ class XrefsView(QDialog):
 
     def __init__(self, items, parent):
         super(XrefsView, self).__init__(parent)
-        self.listIntrs = CommonListView()
-        self.listIntrs.installEventFilter(self)
+        self.listInstrs = CommonListView()
         for item in items:
-            self.listIntrs.model.appendRow(AsmLineNoOpcode(item.instr, item.block, item.func))
-        self.listIntrs.dblAddress.connect(self.finish)
-        self.listIntrs.setSize()
+            self.listInstrs.model.appendRow(AsmLineNoOpcode(item.instr, item.block, item.func))
+        self.listInstrs.dblAddress.connect(self.finish)
         self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self.listIntrs)
+        self.layout.addWidget(self.listInstrs)
+        self.widthView = 0
+        for i in range(self.listInstrs.model.rowCount()):
+            item = self.listInstrs.getItem(i)
+            _, end = item.componentRanges[-1]
+            if self.widthView < end * self.fontMetrics().averageCharWidth():
+                self.widthView = end * self.fontMetrics().averageCharWidth()
+        self.widthView += self.fontMetrics().averageCharWidth() * 10
+        screenHight = QApplication.desktop().height()
+        height = self.listInstrs.sizeHintForRow(0) * (
+                self.listInstrs.model.rowCount() + 4) + 2 * self.listInstrs.frameWidth()
+        if height > screenHight:
+            height = screenHight - 100
+        self.setMinimumWidth(self.widthView)
+        self.setMinimumHeight(height)
 
     def finish(self, address):
         self.gotoAddress.emit(address)

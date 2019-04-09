@@ -1,10 +1,9 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import QTableView, QHeaderView
-from PyQt5.QtCore import pyqtSignal
 
 
 class InfoView(QTableView):
-    clicked = pyqtSignal(int)
 
     def __init__(self, header, data):
         super(InfoView, self).__init__()
@@ -27,6 +26,8 @@ class InfoView(QTableView):
 
 
 class StringView(InfoView):
+    clicked = pyqtSignal(int)
+
     def __init__(self, strings):
         super(StringView, self).__init__(['Address', 'String'], strings)
 
@@ -36,3 +37,29 @@ class StringView(InfoView):
         address = int(cell.text(), 16)
         self.clicked.emit(address)
         super(StringView, self).mouseDoubleClickEvent(event)
+
+
+class ImportView(InfoView):
+    clicked = pyqtSignal(str)
+
+    def __init__(self, imports):
+        super(ImportView, self).__init__(['Address', 'Name', 'Library'], [(hex(i.address), i.name, i.library) for i in imports])
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        index = self.currentIndex()
+        cell = self.model.item(index.row(), 1)
+        self.clicked.emit(cell.text())
+        super(ImportView, self).mouseDoubleClickEvent(event)
+
+
+class ExportView(InfoView):
+    clicked = pyqtSignal(str)
+
+    def __init__(self, exports):
+        super(ExportView, self).__init__(['Address', 'Name'], [(hex(e.address), e.name) for e in exports])
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        index = self.currentIndex()
+        cell = self.model.item(index.row(), 1)
+        self.clicked.emit(cell.text())
+        super(ExportView, self).mouseDoubleClickEvent(event)

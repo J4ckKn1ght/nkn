@@ -267,17 +267,18 @@ class CommonListView(QListView):
     def getClickedIndex(self, item, highlight=True):
         widthChar = self.fontMetrics().averageCharWidth()
         pos = self.clickedX // widthChar
-        index = item.getIndexByPos(pos)
-        if index != -1:
-            self.lastClickIndex = index
-            if item.components[index].text != ',':
-                start = 0
-                if index > 1:
-                    start = 2
-                if highlight:
-                    self.highlighRelation(item.components[index].text, start)
-                item.selectTextAt(index)
-                self.resetList.append(item)
+        if hasattr(item, 'getIndexByPos'):
+            index = item.getIndexByPos(pos)
+            if index != -1:
+                self.lastClickIndex = index
+                if item.components[index].text != ',':
+                    start = 0
+                    if index > 1:
+                        start = 2
+                    if highlight:
+                        self.highlighRelation(item.components[index].text, start)
+                    item.selectTextAt(index)
+                    self.resetList.append(item)
 
 
     def mouseDoubleClickEvent(self, event) -> None:

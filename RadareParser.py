@@ -34,7 +34,7 @@ class Var:
 class Function:
     def __init__(self, dict):
         self.address = dict['offset']
-        self.name = dict['name'].replace('sym.','').replace('imp.','')
+        self.name = dict['name'].replace('sym.','').replace('imp.','_')
         self.size = dict['size']
         self.realSize = dict['realsz']
         self.calltype = dict['calltype']
