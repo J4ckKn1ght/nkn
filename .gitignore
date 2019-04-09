@@ -2,3 +2,9 @@
 \.idea/
 
 *.pyc
+
+miasm/build/lib\.linux-x86_64-3\.6/miasm/
+
+miasm/build/temp\.linux-x86_64-3\.6/miasm/jitter/arch/
+
+*.o
