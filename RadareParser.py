@@ -38,8 +38,8 @@ class Function:
         self.size = dict['size']
         self.realSize = dict['realsz']
         self.calltype = dict['calltype']
-        # self.minBound = dict['minbound']
-        # self.maxBound = dict['maxbound']
+        self.minBound = dict['minbound']
+        self.maxBound = dict['maxbound']
         self.callRefs = {}
         if 'callrefs' in dict:
             for callRef in dict['callrefs']:

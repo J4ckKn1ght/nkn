@@ -7,7 +7,6 @@ from miasm.expression.expression import ExprInt, ExprId, ExprMem, ExprLoc
 
 from Analysis import BinaryAnalysis
 from Utils import *
-import string
 
 
 class HTMLDelegate(QStyledItemDelegate):
@@ -54,8 +53,8 @@ class Component:
                                                                                                highlightColor,
                                                                                                self.text,
                                                                                                '&nbsp;' * (
-                                                                                                           self.width - len(
-                                                                                                       self.text)))
+                                                                                                       self.width - len(
+                                                                                                   self.text)))
 
     def highlightText(self, texts, isEqual):
         tmp = self.text
@@ -148,7 +147,7 @@ class AsmLineWithOpcode(CommonItem):
                             Component(line.name, nameColor, 7)]
         self.args = [line.offset, opcode, line.name]
         for i, arg in enumerate(line.args):
-            if i == 1:
+            if i >= 1:
                 self.components.append(Component(',', opColor, 2))
                 self.args.append(',')
             self.args.append(arg)
@@ -179,7 +178,7 @@ class AsmLineWithOpcode(CommonItem):
                 num = int(arg.arg)
                 if num in BinaryAnalysis.strings:
                     if len(BinaryAnalysis.strings[num]) > 15:
-                        text = BinaryAnalysis.strings[num][:15].replace('\n','') + '...'
+                        text = BinaryAnalysis.strings[num][:15].replace('\n', '') + '...'
                     else:
                         text = BinaryAnalysis.strings[num].replace('\n', '')
                     return text
@@ -205,7 +204,7 @@ class AsmLineNoOpcode(CommonItem):
         self.components += [Component('0x%x' % line.offset, addressColor, 15), Component(line.name, nameColor, 7)]
         self.args = [line.offset, line.name]
         for i, arg in enumerate(line.args):
-            if i == 1:
+            if i >= 1:
                 self.components.append(Component(',', opColor, 2))
                 self.args.append(',')
             self.args.append(arg)
@@ -236,9 +235,9 @@ class AsmLineNoOpcode(CommonItem):
                 num = int(arg.arg)
                 if num in BinaryAnalysis.strings:
                     if len(BinaryAnalysis.strings[num]) > 15:
-                        text = BinaryAnalysis.strings[num][:15].replace('\n','') + '...'
+                        text = BinaryAnalysis.strings[num][:15].replace('\n', '') + '...'
                     else:
-                        text = BinaryAnalysis.strings[num].replace('\n','')
+                        text = BinaryAnalysis.strings[num].replace('\n', '')
                     return text
 
                 else:
@@ -250,6 +249,7 @@ class AsmLineNoOpcode(CommonItem):
                         if all(((32 <= c) and (c <= 127)) or ((c == 0) and (tmp[0] != 0)) for c in tmp):
                             return tmp.decode()
         return ''
+
 
 class CommonListView(QListView):
     dblAddress = pyqtSignal(int)

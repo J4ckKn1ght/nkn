@@ -18,6 +18,7 @@ class ListInstructions(CommonListView):
         self.startAddress = None
         self.endAddress = None
         self.allMem = []
+        self.infoHook = ''
         for item in items:
             if isinstance(item, AsmLineWithOpcode):
                 newItem = AsmLineWithOpcode(item.instr, item.block, item.func)
@@ -63,25 +64,36 @@ class ListInstructions(CommonListView):
             except Exception as e:
                 self.result.emit(str(e))
             sys.stdout = oldStdout
-            self.result.emit(redirectStdout.getvalue())
+            self.infoHook += redirectStdout.getvalue()
+        return True
+
+    def code_sentinelle(self, jitter):
+        jitter.run = False
+        jitter.pc = 0
         return True
 
     def startEmulate(self):
+        self.infoHook = ''
         sb = BinaryAnalysis.sb
-        # sb.jitter.jit.log_mn = True
-        # sb.jitter.jit.log_regs = True
+        sb.jitter.jit.log_mn = True
+        sb.jitter.jit.log_regs = True
         if sb.jitter.attrib == 64:
+            sb.jitter.push_uint64_t(0x1337beef)
             sb.jitter.cpu.RBP = sb.jitter.cpu.RSP
         elif sb.jitter.attrib == 32:
+            sb.jitter.push_uint32_t(0x1337beef)
             sb.jitter.cpu.EBP = sb.jitter.cpu.ESP
+        sb.jitter.add_breakpoint(0x1337beef, self.code_sentinelle)
+        self.hookCodeMap[self.startAddress] = 'print("RSP = " + hex(jitter.cpu.RSP))'
         for address, hookCode in self.hookCodeMap.items():
             if len(hookCode.strip()) != 0:
                 sb.jitter.add_breakpoint(address, self.hook)
         sb.jitter.add_breakpoint(self.endAddress, self.hook)
-        try:
-            sb.run(self.startAddress)
-        except:
-            self.result.emit("Emulate failed. Memory address is not valid")
+        # try:
+        #     sb.run(self.startAddress)
+        # except:
+        #     self.result.emit("Emulate failed. Memory address is not valid")
+        sb.run(self.startAddress)
         out = ''
         allRegs = eval(
             'BinaryAnalysis.machine.mn.regs.regs' + str(BinaryAnalysis.disasmEngine.attrib).zfill(2) + '_str')
@@ -91,6 +103,7 @@ class ListInstructions(CommonListView):
         for mem, memStr in self.allMem:
             out += memStr + ' = ' + str(sb.jitter.eval_expr(mem)) + '\n'
         self.result.emit(out)
+        self.result.emit(self.infoHook)
         self.result.emit("Emulate Finished")
 
 

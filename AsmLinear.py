@@ -1,19 +1,20 @@
 from functools import partial
+import sys
+from io import StringIO
 
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QApplication, QAbstractItemView, QDialog, QHBoxLayout, QMenu, QAction, QInputDialog, \
     QMessageBox
+from future.utils import viewitems
+from miasm.analysis.data_flow import DiGraphDefUse, ReachingDefinitions, AssignblkNode
+from miasm.analysis.depgraph import DependencyGraph
 from miasm.core.utils import Disasm_Exception
 from miasm.expression.expression import Expr, ExprId, ExprInt
 
 from Analysis import BinaryAnalysis
 from CommonView import AsmLineWithOpcode, LocLine, DataLine, AsmLineNoOpcode
 from CommonView import CommonListView
-from miasm.analysis.depgraph import DependencyGraph
 from Utils import sizeByType
-from Emulate import EmulateView
-from future.utils import viewitems
-from miasm.analysis.data_flow import DiGraphDefUse, ReachingDefinitions, AssignblkNode
 
 
 class AsmLinear(CommonListView):
@@ -27,6 +28,7 @@ class AsmLinear(CommonListView):
         super(AsmLinear, self).__init__()
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.initModel()
+        self.hookCode = {}
         self.emulateView = None
         self.fillNopAct = QAction("Fill nop", self)
         self.fillNopAct.triggered.connect(self.fillNop)
@@ -37,6 +39,8 @@ class AsmLinear(CommonListView):
         self.taintAct = QAction("Taint", self)
         self.findDepAct = QAction("Find dependency", self)
         self.toHexView = QAction("Follow hex view", self)
+        self.addHookAct = QAction("Add hook code", self)
+        self.addHookAct.triggered.connect(self.addHook)
         self.emulateAct = QAction("Emulate code", self)
         self.emulateAct.triggered.connect(self.emulateCode)
 
@@ -124,6 +128,7 @@ class AsmLinear(CommonListView):
         if isinstance(item, AsmLineWithOpcode):
             menu.addAction(self.fillNopAct)
             menu.addAction(self.replaceAsmAct)
+            menu.addAction(self.addHookAct)
             menu.addAction(self.emulateAct)
             if arg is not None and isinstance(arg, Expr):
                 menu.addAction(self.taintAct)
@@ -307,7 +312,8 @@ class AsmLinear(CommonListView):
             func.ircfg = func.ira.new_ircfg_from_asmcfg(func.cfg)
             func.defUse = DiGraphDefUse(ReachingDefinitions(func.ircfg))
         indexReg = eval('BinaryAnalysis.machine.mn.regs.regs' + str(arg.size).zfill(2) + '_expr').index(arg)
-        arg = eval('BinaryAnalysis.machine.mn.regs.regs' + str(BinaryAnalysis.disasmEngine.attrib).zfill(2) + '_expr')[indexReg]
+        arg = eval('BinaryAnalysis.machine.mn.regs.regs' + str(BinaryAnalysis.disasmEngine.attrib).zfill(2) + '_expr')[
+            indexReg]
         elements = set()
         elements.add(arg)
         depgraph = DependencyGraph(func.ircfg, implicit=False, apply_simp=True, follow_call=False, follow_mem=True)
@@ -327,16 +333,54 @@ class AsmLinear(CommonListView):
             outputLog += path + '\n\n'
         self.log.emit(outputLog)
 
+    def hook(self, jitter):
+        address = jitter.pc
+        if address in self.hookCode:
+            hookCode = self.hookCode[address]
+            oldStdout = sys.stdout
+            redirectStdout = StringIO()
+            sys.stdout = redirectStdout
+            try:
+                exec(hookCode)
+            except Exception as e:
+                self.log.emit(str(e))
+            sys.stdout = oldStdout
+            self.log.emit(redirectStdout.getvalue())
+        return True
+
+    def code_sentinelle(self, jitter):
+        jitter.run = False
+        jitter.pc = 0
+        return True
+
     def emulateCode(self):
         indexes = self.selectedIndexes()
-        items = []
-        for index in indexes:
-            item = self.getItemFormIndex(index)
-            if isinstance(item, AsmLineWithOpcode) or isinstance(item, LocLine):
-                items.append(item)
-        self.emulateView = EmulateView(items, self)
-        self.emulateView.listInstrs.result.connect(self.writeLog)
-        self.emulateView.show()
+        if len(indexes) > 0:
+            item = self.getItemFormIndex(indexes[0])
+            if isinstance(item, AsmLineWithOpcode):
+                sb = BinaryAnalysis.sb
+                if sb.jitter.attrib == 64:
+                    sb.jitter.push_uint64_t(0x1337beef)
+                    sb.jitter.cpu.RBP = sb.jitter.cpu.RSP
+                elif sb.jitter.attrib == 32:
+                    sb.jitter.push_uint32_t(0x1337beef)
+                    sb.jitter.cpu.EBP = sb.jitter.cpu.ESP
+                sb.jitter.add_breakpoint(0x1337beef, self.code_sentinelle)
+                for address in self.hookCode:
+                    sb.jitter.add_breakpoint(address, self.hook)
+                sb.run(item.address)
+
+    def addHook(self):
+        indexes = self.selectedIndexes()
+        if len(indexes) > 0:
+            item = self.getItemFormIndex(indexes[0])
+            if isinstance(item, AsmLineWithOpcode):
+                code = ''
+                if item.address in self.hookCode:
+                    code = self.hookCode[item.address]
+                code, ok = QInputDialog.getMultiLineText(self, 'Insert Hook', '', code)
+                if ok:
+                    self.hookCode[item.address] = code
 
     def writeLog(self, logData):
         if self.emulateView is not None:

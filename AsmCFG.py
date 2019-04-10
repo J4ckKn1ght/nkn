@@ -19,22 +19,23 @@ from miasm.expression.expression import ExprId, Expr
 class AsmBlockView(BasicBlock):
     gotoAddress = pyqtSignal(int)
 
-    def __init__(self, startLockey, endLockey, lines, func):
+    def __init__(self, startLockey, endLockey, blocks, func):
         super(AsmBlockView, self).__init__()
         nameLine = LocLine(startLockey)
         self.model.appendRow(nameLine)
         self.lockey = startLockey
         self.endLockey = endLockey
-        for line in lines:
-            detectBlock = None
-            for block in func.cfg.blocks:
-                if detectBlock is None:
-                    for line2 in block.lines:
-                        if line == line2:
-                            detectBlock = block
-                            break
-            asmLine = AsmLineNoOpcode(line, detectBlock, func)
-            self.model.appendRow(asmLine)
+        for block in blocks:
+            for line in block.lines:
+                detectBlock = None
+                for block in func.cfg.blocks:
+                    if detectBlock is None:
+                        for line2 in block.lines:
+                            if line == line2:
+                                detectBlock = block
+                                break
+                asmLine = AsmLineNoOpcode(line, detectBlock, func)
+                self.model.appendRow(asmLine)
         self.setSize()
         self.w = self.width()
         self.h = self.height()
@@ -74,18 +75,18 @@ class AsmCFGView(CFG):
             done.add(block)
             startLockey = block.loc_key
             endLockey = block.loc_key
-            lines = block.lines
+            blocks = [block]
             while (block.lines[-1].name == 'CALL') and (len(cfg.predecessors(block.get_next())) == 1):
                 nextLockey = block.get_next()
                 if block.loc_key in cfg.successors(nextLockey):
                     break
                 block = cfg.loc_key_to_block(nextLockey)
-                lines += block.lines
+                blocks.append(block)
                 endLockey = block.loc_key
                 done.add(block)
             vertex = Vertex(startLockey)
             vertexs[startLockey] = vertex
-            vertex.view = AsmBlockView(startLockey, endLockey, lines, self.func)
+            vertex.view = AsmBlockView(startLockey, endLockey, blocks, self.func)
         edges = []
         for src in vertexs.values():
             successLocKeys = cfg.successors(src.view.endLockey)

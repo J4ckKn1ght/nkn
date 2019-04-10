@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QAbstractItemView, QListView, QApplication, QGraphic
     QGraphicsPathItem
 from math import radians, pi, cos, sin, pow, ceil
 
+from Analysis import BinaryAnalysis
 from CommonView import LocLine, CommonListView
 
 
@@ -19,7 +20,6 @@ class BasicBlock(CommonListView):
         self.h = None
         self.outBlocks = []
         self.inBlocks = []
-        self.setStyleSheet('border: 2px solid;')
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setFocusPolicy(Qt.ClickFocus)
 
@@ -51,8 +51,9 @@ class BasicBlock(CommonListView):
         super(BasicBlock, self).mouseReleaseEvent(event)
 
     def getLineSelected(self):
-        index = self.selectedIndexes()[0]
-        return self.getItemFormIndex(index)
+        if len(self.selectedIndexes()) > 0:
+            index = self.selectedIndexes()[0]
+            return self.getItemFormIndex(index)
 
 
 class BasicEdge(QGraphicsItem):
@@ -122,6 +123,7 @@ class BasicEdge(QGraphicsItem):
 
 class CFG(QGraphicsView):
     changeCFG = pyqtSignal(int)
+    gotoAddress = pyqtSignal(int)
     log = pyqtSignal(str)
 
     def __init__(self):
@@ -212,4 +214,13 @@ class CFG(QGraphicsView):
             if not isinstance(line, LocLine):
                 if line.ref:
                     self.changeCFG.emit(line.ref)
-        super(CFG, self).mouseDoubleClickEvent(event)
+                else:
+                    arg = line.args[self.clickedBlock.lastClickIndex]
+                    num = int(arg.arg)
+                    for func in BinaryAnalysis.funcs:
+                        if func.address == num:
+                            self.changeCFG.emit(func.address)
+                            super(CFG, self).mouseDoubleClickEvent(event)
+                            return
+                    self.gotoAddress.emit(int(arg.arg))
+            super(CFG, self).mouseDoubleClickEvent(event)

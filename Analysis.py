@@ -133,6 +133,13 @@ class BinaryAnalysis:
         name = BinaryAnalysis.locDB.pretty_str(lockey)
         if not 'loc_' in name:
             func.name = name
+        delBlocks = []
+        for block in func.cfg.blocks:
+            address = block.lines[0].offset
+            if address < func.minBound or address >= func.maxBound:
+                delBlocks.append(block)
+        for block in delBlocks:
+            func.cfg.del_block(block)
         for block in func.cfg.blocks:
             if len(block.lines) > 0:
                 if block.lines[0].offset not in BinaryAnalysis.doneAddress:
@@ -149,8 +156,8 @@ class BinaryAnalysis:
                                     BinaryAnalysis.dataXrefs[num].append(line.offset)
                                 else:
                                     BinaryAnalysis.dataXrefs[num] = [line.offset]
-            for address, string in BinaryAnalysis.strings.items():
-                BinaryAnalysis.dataType[address] = 'string'
+        for address, string in BinaryAnalysis.strings.items():
+            BinaryAnalysis.dataType[address] = 'string'
 
         lock.release()
         locKey = BinaryAnalysis.locDB.get_offset_location(func.address)

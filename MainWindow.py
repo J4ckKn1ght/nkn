@@ -259,7 +259,7 @@ class Window(QMainWindow):
             widget = self.mainTab.widget(i)
             if isinstance(widget, AsmCFGView):
                 if line.func == widget.func:
-                    if not line.func:
+                    if not line.func.changed:
                         self.mainTab.setCurrentIndex(i)
                         return
                     else:
@@ -276,6 +276,7 @@ class Window(QMainWindow):
         asmCFGView.changeCFG.connect(self.replaceAsmCFG)
         asmCFGView.gotoHexView.connect(self.gotoHexView)
         asmCFGView.gotoIRCFG.connect(self.addIRCFGView)
+        asmCFGView.gotoAddress.connect(self.gotoAsmLinear)
         asmCFGView.log.connect(self.outputLog.append)
         indexes = self.asmLinear.selectedIndexes()
         for index in indexes:
@@ -291,9 +292,10 @@ class Window(QMainWindow):
             self.asmLinear = AsmLinear()
             self.bindAsmLinear()
             self.addNewTab(self.asmLinear, "Disassmbly")
-        self.focusWidgetInTab(self.asmLinear)
-        self.asmLinear.focusAddress(address)
-        self.asmLinear.setFocus()
+        if address in self.asmLinear.addressMap:
+            self.focusWidgetInTab(self.asmLinear)
+            self.asmLinear.focusAddress(address)
+            self.asmLinear.setFocus()
 
     def gotoHexView(self, offset, lenData):
         index = self.mainTab.indexOf(self.hexView)
@@ -355,6 +357,7 @@ class Window(QMainWindow):
     def closeTab(self, index):
         self.mainTab.removeTab(index)
         self.mainTab.setCurrentIndex(index - 1)
+        self.mainTab.widget(index - 1).setFocus()
 
     def focusWidgetInTab(self, widget):
         index = self.mainTab.indexOf(widget)
