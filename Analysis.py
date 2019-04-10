@@ -5,11 +5,49 @@ from miasm.analysis.binary import Container, ContainerELF, ContainerPE
 from miasm.analysis.machine import Machine
 from miasm.analysis.sandbox import Sandbox_Linux_x86_32, Sandbox_Linux_x86_64, Sandbox_Win_x86_32, Sandbox_Win_x86_64
 from miasm.core.interval import interval
-from miasm.expression.expression import ExprInt
+from miasm.expression.expression import ExprInt, ExprLoc, ExprMem, ExprId, ExprOp
 
 import Utils
 from BinaryParser import PEInfo, ELFInfo
 from RadareParser import Function
+
+def detect_func_name(cur_bloc, loc_db, *args, **kwargs):
+    for line in cur_bloc.lines:
+        for i in range(len(line.args)):
+            arg = line.args[i]
+            if isinstance(arg, ExprMem):
+                ptr = arg.ptr
+                if isinstance(ptr, ExprOp):
+                    if isinstance(ptr.args[0], ExprId) and ('IP' in str(ptr.args[0])) and isinstance(ptr.args[1],
+                                                                                                     ExprInt):
+                        ip = line.offset + line.l
+                        offset = ptr.args[1].arg
+                        loc_key = loc_db.get_offset_location(ip + offset)
+                        if loc_key is not None:
+                            line.args[i] = ExprLoc(loc_key, arg.size)
+                            names = loc_db.get_location_names(cur_bloc.loc_key)
+                            if len(names) == 0:
+                                new_name = list(loc_db.get_location_names(loc_key))
+                                if len(new_name) != 0:
+                                    new_name = '_' + new_name[0].decode()
+                                    try:
+                                        loc_db.add_location_name(cur_bloc.loc_key, new_name)
+                                    except:
+                                        pass
+                elif isinstance(ptr, ExprInt) and line.name == 'JMP':
+                    offset = ptr.arg
+                    loc_key = loc_db.get_offset_location(offset)
+                    if loc_key is not None:
+                        line.args[i] = ExprLoc(loc_key, arg.size)
+                        names = loc_db.get_location_names(cur_bloc.loc_key)
+                        if len(names) == 0:
+                            new_name = list(loc_db.get_location_names(loc_key))
+                            if len(new_name) != 0:
+                                new_name = '_' + new_name[0].decode()
+                                try:
+                                    loc_db.add_location_name(cur_bloc.loc_key, new_name)
+                                except:
+                                    pass
 
 
 class BinaryAnalysis:
@@ -65,6 +103,7 @@ class BinaryAnalysis:
                 BinaryAnalysis.sb = Sandbox_Linux_x86_64(BinaryAnalysis.path, options, globals())
         BinaryAnalysis.disasmEngine = BinaryAnalysis.machine.dis_engine(BinaryAnalysis.container.bin_stream,
                                                                         loc_db=BinaryAnalysis.container.loc_db)
+        BinaryAnalysis.disasmEngine.dis_block_callback = detect_func_name
         BinaryAnalysis.strings = BinaryAnalysis.binaryInfo.findStrings()
         BinaryAnalysis.radare = r2pipe.open(binary)
         BinaryAnalysis.radare.cmd('aaa;')

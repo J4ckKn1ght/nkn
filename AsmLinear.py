@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QApplication, QAbstractItemView, QDialog, QHBoxLayout, QMenu, QAction, QInputDialog, \
     QMessageBox
 from miasm.core.utils import Disasm_Exception
-from miasm.expression.expression import Expr, ExprId
+from miasm.expression.expression import Expr, ExprId, ExprInt
 
 from Analysis import BinaryAnalysis
 from CommonView import AsmLineWithOpcode, LocLine, DataLine, AsmLineNoOpcode
@@ -89,7 +89,10 @@ class AsmLinear(CommonListView):
                         xrefs = None
                         typeData = 'byte'
                         data = BinaryAnalysis.container.bin_stream.getbytes(i, 1)
-                    item = DataLine(i, data, typeData)
+                    if typeData == 'string':
+                        item = DataLine(i, data.replace('\n', ''), typeData)
+                    else:
+                        item = DataLine(i, data, typeData)
                     item.xrefs = xrefs
                     self.addressMap[i] = item
                     self.model.appendRow(item)
@@ -103,6 +106,11 @@ class AsmLinear(CommonListView):
         item = self.getItemFormIndex(index)
         if item.ref is not None:
             self.focusAddress(item.ref)
+        elif isinstance(item, AsmLineWithOpcode):
+            arg = item.args[self.lastClickIndex]
+            if isinstance(arg, ExprInt):
+                if arg.arg in self.addressMap:
+                    self.focusAddress(arg.arg)
         self.lockRelease = True
 
     def contextMenuEvent(self, event) -> None:

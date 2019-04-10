@@ -49,8 +49,12 @@ class Component:
                                                                      '&nbsp;' * (self.width - len(self.text)))
         self.select = '<span style="color:{0}">{1}</span>{2}'.format(selectedColor, self.text,
                                                                      '&nbsp;' * (self.width - len(self.text)))
-        self.highlight = '<span style="color:{0}; background-color:{1};">{2}</span>{3}'.format(selectedColor, highlightColor, self.text,
-                                                                     '&nbsp;' * (self.width - len(self.text)))
+        self.highlight = '<span style="color:{0}; background-color:{1};">{2}</span>{3}'.format(selectedColor,
+                                                                                               highlightColor,
+                                                                                               self.text,
+                                                                                               '&nbsp;' * (
+                                                                                                           self.width - len(
+                                                                                                       self.text)))
 
     def highlightText(self, texts, isEqual):
         tmp = self.text
@@ -148,20 +152,37 @@ class AsmLineWithOpcode(CommonItem):
                 self.args.append(',')
             self.args.append(arg)
             argStr = line.arg2str(arg, loc_db=BinaryAnalysis.locDB)
+            width = len(argStr)
+            if i == len(line.args) - 1:
+                width += 15
             if isinstance(arg, ExprId):
-                self.components.append(Component(argStr, idColor, len(argStr)))
+                self.components.append(Component(argStr, idColor, width))
             elif isinstance(arg, ExprInt):
-                self.components.append(Component(argStr, intColor, len(argStr)))
+                self.components.append(Component(argStr, intColor, width))
             elif isinstance(arg, ExprMem):
-                self.components.append(Component(argStr, memColor, len(argStr)))
+                self.components.append(Component(argStr, memColor, width))
             elif isinstance(arg, ExprLoc):
-                self.components.append(Component(argStr, locColor, len(argStr)))
+                self.components.append(Component(argStr, locColor, width))
+        self.comment = self.getComment()
+        self.components.append(Component(self.comment, commentColor, len(self.comment)))
         self.calculateRange()
         if self.address in func.callRefs:
             self.ref = func.callRefs[self.address]
 
     def clone(self):
         return AsmLineWithOpcode(self.instr, self.func.cfg.loc_db, self.block, self.func)
+
+    def getComment(self):
+        for arg in self.instr.args:
+            if isinstance(arg, ExprInt):
+                num = int(arg.arg)
+                if num in BinaryAnalysis.strings:
+                    if len(BinaryAnalysis.strings[num]) > 15:
+                        text = ';' + BinaryAnalysis.strings[num][:15] + '...'
+                    else:
+                        text = ';' + BinaryAnalysis.strings[num]
+                    return text
+        return ''
 
 
 class AsmLineNoOpcode(CommonItem):
@@ -180,14 +201,19 @@ class AsmLineNoOpcode(CommonItem):
                 self.args.append(',')
             self.args.append(arg)
             argStr = line.arg2str(arg, loc_db=BinaryAnalysis.locDB)
+            width = len(argStr)
+            if i == len(line.args) - 1:
+                width += 10
             if isinstance(arg, ExprId):
-                self.components.append(Component(argStr, idColor, len(argStr)))
+                self.components.append(Component(argStr, idColor, width))
             elif isinstance(arg, ExprInt):
-                self.components.append(Component(argStr, intColor, len(argStr)))
+                self.components.append(Component(argStr, intColor, width))
             elif isinstance(arg, ExprMem):
-                self.components.append(Component(argStr, memColor, len(argStr)))
+                self.components.append(Component(argStr, memColor, width))
             elif isinstance(arg, ExprLoc):
-                self.components.append(Component(argStr, locColor, len(argStr)))
+                self.components.append(Component(argStr, locColor, width))
+        self.comment = self.getComment()
+        self.components.append(Component(self.comment, commentColor, len(self.comment)))
         self.calculateRange()
         if self.address in func.callRefs:
             self.ref = func.callRefs[self.address]
@@ -195,6 +221,17 @@ class AsmLineNoOpcode(CommonItem):
     def clone(self):
         return AsmLineNoOpcode(self.instr, self.block, self.func)
 
+    def getComment(self):
+        for arg in self.instr.args:
+            if isinstance(arg, ExprInt):
+                num = int(arg.arg)
+                if num in BinaryAnalysis.strings:
+                    if len(BinaryAnalysis.strings[num]) > 15:
+                        text = ';' + BinaryAnalysis.strings[num][:15] + '...'
+                    else:
+                        text = ';' + BinaryAnalysis.strings[num]
+                    return text
+        return ''
 
 class CommonListView(QListView):
     dblAddress = pyqtSignal(int)
@@ -279,7 +316,6 @@ class CommonListView(QListView):
                         self.highlighRelation(item.components[index].text, start)
                     item.selectTextAt(index)
                     self.resetList.append(item)
-
 
     def mouseDoubleClickEvent(self, event) -> None:
         self.lockRelease = True

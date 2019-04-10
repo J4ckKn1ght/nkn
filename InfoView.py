@@ -56,7 +56,7 @@ class ExportView(InfoView):
     clicked = pyqtSignal(str)
 
     def __init__(self, exports):
-        super(ExportView, self).__init__(['Address', 'Name'], [(hex(e.address), e.name) for e in exports])
+        super(ExportView, self).__init__(['Address', 'Name'], [(hex(e.address)  , e.name) for e in exports])
 
     def mouseDoubleClickEvent(self, event) -> None:
         index = self.currentIndex()

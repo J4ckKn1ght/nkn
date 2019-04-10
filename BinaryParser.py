@@ -22,7 +22,7 @@ class ImportFunction:
         self.library = library
 
 
-class ExporFunction:
+class ExportFunction:
     def __init__(self, name, address):
         self.name = name
         self.address = address
@@ -51,7 +51,7 @@ class PEInfo:
         self.exports = []
         if hasattr(self.parser, "DIRECTORY_ENTRY_EXPORT"):
             for exp in self.parser.DIRECTORY_ENTRY_EXPORT.symbols:
-                exportFunc = ExporFunction(self.imageBase + exp.address, exp.name)
+                exportFunc = ExportFunction(self.imageBase + exp.address, exp.name)
                 self.exports.append(exportFunc)
         self.findStrings()
 
@@ -190,7 +190,7 @@ class ELFInfo:
                                 self.imports.append(importFunc)
                         else:
                             if sym.name in self.symbols:
-                                exportFunc = ExporFunction(sym.name, self.symbols[sym.name])
+                                exportFunc = ExportFunction(sym.name, self.symbols[sym.name])
                                 self.exports.append(exportFunc)
 
     @property
@@ -236,7 +236,7 @@ class ELFInfo:
                 data = self.getData(section.header.sh_offset, section.header.sh_size)
                 indexs = re.finditer(b"([a-zA-Z0-9` \n~!@#$%^&*()-_=+|';\":.,?><*-]{2,})", data)
                 for index in indexs:
-                    strings[section.header.sh_addr + index.start(0)] = str(data[index.start(0):index.end(0)])[2:-1]
+                    strings[section.header.sh_addr + index.start(0)] = data[index.start(0):index.end(0)].decode()
         return strings
 
     def strings(self):
@@ -249,7 +249,7 @@ class ELFInfo:
                 indexs = re.finditer(b"([a-zA-Z0-9` \n~!@#$%^&*()-_=+|';\":.,?><*-]{2,})", data)
                 for index in indexs:
                     address = hex(section.header.sh_addr + index.start(0))
-                    string = str(data[index.start(0):index.end(0)])[2:-1]
+                    string = data[index.start(0):index.end(0)].decode()
                     strings.append((address, string))
                     self.stringAddrs.append(section.header.sh_addr)
         return strings
