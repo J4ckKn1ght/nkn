@@ -11,7 +11,7 @@ class InfoView(QTableView):
         for i in range(len(data)):
             rows = []
             for j in range(len(header)):
-                item = QStandardItem(str(data[i][j]))
+                item = QStandardItem(str(data[i][j].encode())[2:-1])
                 rows.append(item)
             self.model.appendRow(rows)
         self.setModel(self.model)

@@ -207,8 +207,9 @@ class CFG(QGraphicsView):
                         return
 
     def mouseDoubleClickEvent(self, event) -> None:
-        line = self.clickedBlock.getLineSelected()
-        if not isinstance(line, LocLine):
-            if line.ref:
-                self.changeCFG.emit(line.ref)
+        if self.clickedBlock is not None:
+            line = self.clickedBlock.getLineSelected()
+            if not isinstance(line, LocLine):
+                if line.ref:
+                    self.changeCFG.emit(line.ref)
         super(CFG, self).mouseDoubleClickEvent(event)

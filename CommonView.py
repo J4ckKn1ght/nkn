@@ -7,6 +7,7 @@ from miasm.expression.expression import ExprInt, ExprId, ExprMem, ExprLoc
 
 from Analysis import BinaryAnalysis
 from Utils import *
+import string
 
 
 class HTMLDelegate(QStyledItemDelegate):
@@ -178,10 +179,18 @@ class AsmLineWithOpcode(CommonItem):
                 num = int(arg.arg)
                 if num in BinaryAnalysis.strings:
                     if len(BinaryAnalysis.strings[num]) > 15:
-                        text = ';' + BinaryAnalysis.strings[num][:15] + '...'
+                        text = BinaryAnalysis.strings[num][:15].replace('\n','') + '...'
                     else:
-                        text = ';' + BinaryAnalysis.strings[num]
+                        text = BinaryAnalysis.strings[num].replace('\n', '')
                     return text
+                else:
+                    lockey = BinaryAnalysis.locDB.get_offset_location(arg.arg)
+                    if lockey:
+                        return BinaryAnalysis.locDB.pretty_str(lockey)
+                    else:
+                        tmp = struct.pack('Q', int(arg.arg))
+                        if all(((32 <= c) and (c <= 127)) or ((c == 0) and (tmp[0] != 0)) for c in tmp):
+                            return tmp.decode()
         return ''
 
 
@@ -227,10 +236,19 @@ class AsmLineNoOpcode(CommonItem):
                 num = int(arg.arg)
                 if num in BinaryAnalysis.strings:
                     if len(BinaryAnalysis.strings[num]) > 15:
-                        text = ';' + BinaryAnalysis.strings[num][:15] + '...'
+                        text = BinaryAnalysis.strings[num][:15].replace('\n','') + '...'
                     else:
-                        text = ';' + BinaryAnalysis.strings[num]
+                        text = BinaryAnalysis.strings[num].replace('\n','')
                     return text
+
+                else:
+                    lockey = BinaryAnalysis.locDB.get_offset_location(arg.arg)
+                    if lockey:
+                        return BinaryAnalysis.locDB.pretty_str(lockey)
+                    else:
+                        tmp = struct.pack('Q', int(arg.arg))
+                        if all(((32 <= c) and (c <= 127)) or ((c == 0) and (tmp[0] != 0)) for c in tmp):
+                            return tmp.decode()
         return ''
 
 class CommonListView(QListView):
@@ -332,6 +350,7 @@ class CommonListView(QListView):
             self.selectionModel().select(index, QItemSelectionModel.Select)
             if focus:
                 self.scrollTo(index, QAbstractItemView.PositionAtCenter)
+            self.setFocus()
 
     def focusItem(self, index):
         self.clearAllEffect()
