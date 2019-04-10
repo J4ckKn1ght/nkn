@@ -10,6 +10,7 @@ from miasm.analysis.data_flow import DiGraphDefUse, ReachingDefinitions, Assignb
 from miasm.analysis.depgraph import DependencyGraph
 from miasm.core.utils import Disasm_Exception
 from miasm.expression.expression import Expr, ExprId, ExprInt
+from miasm.jitter.csts import PAGE_READ, PAGE_WRITE
 
 from Analysis import BinaryAnalysis
 from CommonView import AsmLineWithOpcode, LocLine, DataLine, AsmLineNoOpcode
@@ -358,17 +359,25 @@ class AsmLinear(CommonListView):
         if len(indexes) > 0:
             item = self.getItemFormIndex(indexes[0])
             if isinstance(item, AsmLineWithOpcode):
-                sb = BinaryAnalysis.sb
-                if sb.jitter.attrib == 64:
-                    sb.jitter.push_uint64_t(0x1337beef)
-                    sb.jitter.cpu.RBP = sb.jitter.cpu.RSP
-                elif sb.jitter.attrib == 32:
-                    sb.jitter.push_uint32_t(0x1337beef)
-                    sb.jitter.cpu.EBP = sb.jitter.cpu.ESP
-                sb.jitter.add_breakpoint(0x1337beef, self.code_sentinelle)
+                stackSize = 0x1000000
+                stackBase = 0x1230000
+                jitter = BinaryAnalysis.machine.jitter('llvm')
+                jitter.vm.add_memory_page(BinaryAnalysis.binaryInfo.imageBase, PAGE_READ | PAGE_WRITE, bytes(BinaryAnalysis.rawData))
+                jitter.vm.add_memory_page(stackBase, PAGE_READ | PAGE_WRITE, bytes([0] * stackSize))
+                jitter.cpu.RSP = stackBase + stackSize
+                jitter.jit.log_mn = True
+                jitter.jit.log_regs = True
+                if jitter.attrib == 64:
+                    jitter.push_uint64_t(0x1337beef)
+                    jitter.cpu.RBP = jitter.cpu.RSP
+                elif jitter.attrib == 32:
+                    jitter.push_uint32_t(0x1337beef)
+                    jitter.cpu.EBP = jitter.cpu.ESP
+                jitter.add_breakpoint(0x1337beef, self.code_sentinelle)
                 for address in self.hookCode:
-                    sb.jitter.add_breakpoint(address, self.hook)
-                sb.run(item.address)
+                    jitter.add_breakpoint(address, self.hook)
+                jitter.init_run(item.address)
+                jitter.continue_run()
 
     def addHook(self):
         indexes = self.selectedIndexes()
