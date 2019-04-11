@@ -502,10 +502,13 @@ class ExprInt(Expr):
         if self._arg < 0:
             return str("-0x%X" % (- self._get_int()))
         else:
-            return str("0x%X" % self._get_int())
+            if (self.toSigned() is not None and (self._arg == self.toSigned())) or (self.toSigned() is None):
+                return str("0x%X" % self._get_int())
+            else:
+                return self.toSignedStr()
 
     def toSignedStr(self):
-        return hex(self.toSigned()).replace('L','')
+        return hex(self.toSigned())
 
     def toSigned(self):
         if self.size == 8:

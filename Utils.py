@@ -1,19 +1,19 @@
 import threading
 import struct
 
-addressColor = '#298A08'
-opcodeColor = '#0B3861'
-nameColor = '#61380B'
-intColor = '#8A0808'
-locColor = '#868A08'
-memColor = '#0B4C5F'
-idColor = 'green'
+addressColor = '#757575'
+opcodeColor = '#1B5E20'
+nameColor = '#1A237E'
+intColor = '#005B2A'
+locColor = 'red'
+memColor = '#E65100'
+idColor = '#1A237E'
 commentColor = 'black'
-dataColor = '#8A0808'
-typeColor = 'black'
-opColor = 'black'
-highlightColor = '#CD853F'
-selectedColor = 'yellow'
+dataColor = '#1B5E20' 
+typeColor = '#0D47A1'
+opColor = '#023E5E' 
+highlightColor = 'yellow'
+selectedColor = '#ffffff'
 
 
 def runMultiThread(listObjs, target):
