@@ -46,12 +46,12 @@ class PEInfo:
         self.imports = []
         for entry in self.parser.DIRECTORY_ENTRY_IMPORT:
             for imp in entry.imports:
-                importFunc = ImportFunction(imp.name, imp.address, entry.dll)
+                importFunc = ImportFunction(imp.name.decode(), imp.address, entry.dll.decode())
                 self.imports.append(importFunc)
         self.exports = []
         if hasattr(self.parser, "DIRECTORY_ENTRY_EXPORT"):
             for exp in self.parser.DIRECTORY_ENTRY_EXPORT.symbols:
-                exportFunc = ExportFunction(self.imageBase + exp.address, exp.name)
+                exportFunc = ExportFunction(self.imageBase + exp.address, exp.name.decode())
                 self.exports.append(exportFunc)
         self.findStrings()
 
