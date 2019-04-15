@@ -27,7 +27,7 @@ class IRLinearView(CommonListView):
 
     def initView(self):
         for lockey, block in self.ircfg.blocks.items():
-            nameLine = LocLine(lockey)
+            nameLine = LocLine(lockey, self.ircfg)
             self.mapLocs[lockey] = nameLine
             self.model.appendRow(nameLine)
             index = 0
@@ -192,7 +192,7 @@ class IRBlockView(BasicBlock):
         self.block = block
         self.lockey = lockey
         self.pretty = pretty
-        nameLine = LocLine(lockey)
+        nameLine = LocLine(lockey, None)
         self.model.appendRow(nameLine)
         index = 0
         for assignblk in block.assignblks:

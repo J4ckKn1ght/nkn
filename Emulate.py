@@ -30,7 +30,7 @@ class ListInstructions(CommonListView):
                 self.endAddress = item.address + item.instr.l
                 self.hookCodeMap[item.address] = ''
             else:
-                newItem = LocLine(item.lockey)
+                newItem = LocLine(item.lockey, None)
             self.model.appendRow(newItem)
         self.widthView = 0
         for i in range(self.model.rowCount()):

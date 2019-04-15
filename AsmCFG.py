@@ -21,7 +21,7 @@ class AsmBlockView(BasicBlock):
 
     def __init__(self, startLockey, endLockey, blocks, func):
         super(AsmBlockView, self).__init__()
-        nameLine = LocLine(startLockey)
+        nameLine = LocLine(startLockey, func)
         self.model.appendRow(nameLine)
         self.lockey = startLockey
         self.endLockey = endLockey

@@ -56,13 +56,13 @@ class AsmLinear(CommonListView):
                 if len(pres) == 1:
                     preBlock = code[1].cfg.loc_key_to_block(pres[0])
                     if preBlock.lines[-1].name != 'CALL':
-                        item = LocLine(code[0].loc_key)
+                        item = LocLine(code[0].loc_key, code[1])
                         address = code[0].lines[0].offset
                         if address in code[1].codeXRefs:
                             item.xrefs = code[1].codeXRefs[address]
                         self.model.appendRow(item)
                 else:
-                    item = LocLine(code[0].loc_key)
+                    item = LocLine(code[0].loc_key, code[1])
                     address = code[0].lines[0].offset
                     if address in code[1].codeXRefs:
                         item.xrefs = code[1].codeXRefs[address]

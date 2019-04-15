@@ -122,11 +122,12 @@ class CommonItem(QStandardItem):
 
 
 class LocLine(CommonItem):
-    def __init__(self, lockey):
+    def __init__(self, lockey, func):
         self.address = BinaryAnalysis.locDB.get_location_offset(lockey)
         name = BinaryAnalysis.locDB.pretty_str(lockey)
         super(LocLine, self).__init__()
         self.lockey = lockey
+        self.func = func
         self.components.append(Component(name, locColor, len(name)))
         self.componentRanges.append((0, len(name)))
         self.normal = self.components[0].normal
@@ -283,22 +284,40 @@ class CommonListView(QListView):
         self.setFixedWidth(width_view + self.fontMetrics().averageCharWidth() * 3)
         self.setFixedHeight(self.sizeHintForRow(1) * self.model.rowCount() + 2 * self.frameWidth() + 10)
 
-    def highlighRelation(self, text, start):
+    def highlighRelation(self, text, start, func=None):
         texts = [text]
         for regs in relate_registers:
             if text in regs:
                 texts = regs
                 break
-        for i in range(self.model.rowCount()):
-            item = self.getItem(i)
-            if item.isSelectable():
+        if func is not None:
+            startItem = self.addressMap[func.address]
+            index = self.model.indexFromItem(startItem)
+            row = index.row()
+            item = self.getItem(row)
+            while hasattr(item, 'func') and item.func == func:
                 if isinstance(item, LocLine):
                     change = item.highlight(texts, 0)
                 else:
-                    if hasattr(item, 'highlight'):
-                        change = item.highlight(texts, start)
+                    change = item.highlight(texts, start)
                 if change:
                     self.resetList.append(item)
+                row += 1
+                item = self.getItem(row)
+                if hasattr(item, 'address'):
+                    if item.address > func.maxBound:
+                        break
+        else:
+            for i in range(self.model.rowCount()):
+                item = self.getItem(i)
+                if item.isSelectable():
+                    if isinstance(item, LocLine):
+                        change = item.highlight(texts, 0)
+                    else:
+                        if hasattr(item, 'highlight'):
+                            change = item.highlight(texts, start)
+                    if change:
+                        self.resetList.append(item)
 
     def mousePressEvent(self, event) -> None:
         self.lockRelease = False
@@ -316,11 +335,15 @@ class CommonListView(QListView):
                 index = self.selectedIndexes()[0]
                 item = self.getItemFormIndex(index)
                 self.getClickedIndex(item)
-
         super(CommonListView, self).mouseReleaseEvent(event)
 
     def getClickedIndex(self, item, highlight=True):
-        widthChar = self.fontMetrics().averageCharWidth()
+        import platform
+        if platform.system() == 'Windows':
+            widthChar = self.fontMetrics().averageCharWidth() + 4
+            self.clickedX -= 5
+        else:
+            widthChar = self.fontMetrics().averageCharWidth()
         pos = self.clickedX // widthChar
         if hasattr(item, 'getIndexByPos'):
             index = item.getIndexByPos(pos)
@@ -331,7 +354,10 @@ class CommonListView(QListView):
                     if index > 1:
                         start = 2
                     if highlight:
-                        self.highlighRelation(item.components[index].text, start)
+                        func = None
+                        if hasattr(item, 'func'):
+                            func = item.func
+                        self.highlighRelation(item.components[index].text, start, func)
                     item.selectTextAt(index)
                     self.resetList.append(item)
 
