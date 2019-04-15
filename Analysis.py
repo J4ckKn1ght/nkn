@@ -135,9 +135,10 @@ class BinaryAnalysis:
             func.name = name
         delBlocks = []
         for block in func.cfg.blocks:
-            address = block.lines[0].offset
-            if address < func.minBound or address >= func.maxBound:
-                delBlocks.append(block)
+            if len(block.lines) > 0:
+                address = block.lines[0].offset
+                if address < func.minBound or address >= func.maxBound:
+                    delBlocks.append(block)
         for block in delBlocks:
             func.cfg.del_block(block)
         for block in func.cfg.blocks:
