@@ -290,7 +290,7 @@ class CommonListView(QListView):
             if text in regs:
                 texts = regs
                 break
-        if func is not None:
+        if (func is not None) and (func.address in self.addressMap):
             startItem = self.addressMap[func.address]
             index = self.model.indexFromItem(startItem)
             row = index.row()
