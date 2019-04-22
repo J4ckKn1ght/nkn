@@ -273,7 +273,13 @@ class AsmLinear(CommonListView):
                 for address in item.xrefs:
                     if address in self.addressMap:
                         items.append(self.addressMap[address])
-                xrefsDialog = XrefsView(items, self)
+                title = "X-References "
+                if isinstance(item, LocLine):
+                    title += item.components[0].text
+                elif isinstance(item, DataLine):
+                    if item.typeData == 'string':
+                        title += item.data
+                xrefsDialog = XrefsView(title, items, self)
                 xrefsDialog.gotoAddress.connect(self.focusAddress)
                 xrefsDialog.show()
 
@@ -415,8 +421,9 @@ class AsmLinear(CommonListView):
 class XrefsView(QDialog):
     gotoAddress = pyqtSignal(int)
 
-    def __init__(self, items, parent):
+    def __init__(self, title, items, parent):
         super(XrefsView, self).__init__(parent)
+        self.setWindowTitle(title)
         self.listInstrs = CommonListView()
         for item in items:
             self.listInstrs.model.appendRow(AsmLineNoOpcode(item.instr, item.block, item.func))

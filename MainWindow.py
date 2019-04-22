@@ -59,7 +59,7 @@ class Window(QMainWindow):
                 ('String', 'Ctrl+L', 'String View', self.openStringView),
             ],
             'Tool': [
-                ('Recovery Algorithm', 'Ctrl+R', "Recovery Algorithm", self.recoverAlgorithm)
+                ('Basic Deobfuscate', 'Ctrl+R', "Basic Deobfuscate", self.recoverAlgorithm)
             ]
         }
         for name in names:
