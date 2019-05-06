@@ -32,12 +32,18 @@ class BasicBlock(CommonListView):
 
     def mouseReleaseEvent(self, event):
         x = event.pos().x()
+
         selected_indexs = self.selectedIndexes()
         if len(selected_indexs) == 1:
             index = selected_indexs[0]
             line = self.model.item(index.row(), 0)
-            width = self.fontMetrics().averageCharWidth()
-            pos = ceil(x / width)
+            import platform
+            if platform.system() == 'Windows':
+                widthChar = self.fontMetrics().averageCharWidth() + 4
+                x -= 5
+            else:
+                widthChar = self.fontMetrics().averageCharWidth()
+            pos = ceil(x / widthChar)
             index = line.getIndexByPos(pos)
             if index != -1:
                 text = line.components[index].text
@@ -169,7 +175,6 @@ class CFG(QGraphicsView):
                 else:
                     block.clearAllEffect()
         super(CFG, self).mousePressEvent(event)
-
 
     def clearAllFocus(self):
         for block in self.mapItems:
