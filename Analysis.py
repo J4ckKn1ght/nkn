@@ -69,6 +69,7 @@ class BinaryAnalysis:
     data = []
     locDB = None
     strings = {}
+    maxSizeData = None
 
     @staticmethod
     def init(binary):
@@ -104,6 +105,7 @@ class BinaryAnalysis:
         BinaryAnalysis.disasmEngine = BinaryAnalysis.machine.dis_engine(BinaryAnalysis.container.bin_stream,
                                                                         loc_db=BinaryAnalysis.container.loc_db)
         BinaryAnalysis.disasmEngine.dis_block_callback = detect_func_name
+        BinaryAnalysis.maxSizeData = BinaryAnalysis.disasmEngine.attrib // 8
         BinaryAnalysis.strings = BinaryAnalysis.binaryInfo.findStrings()
         BinaryAnalysis.radare = r2pipe.open(binary)
         BinaryAnalysis.radare.cmd('aaa;')

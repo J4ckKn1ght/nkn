@@ -43,6 +43,10 @@ class AsmLinear(CommonListView):
         self.addHookAct.triggered.connect(self.addHook)
         self.emulateAct = QAction("Emulate code", self)
         self.emulateAct.triggered.connect(self.emulateCode)
+        self.upgradeAct = QAction("Upgrade data", self)
+        self.upgradeAct.triggered.connect(self.upgrade)
+        self.downgradeAct = QAction("Downgrade data", self)
+        self.downgradeAct.triggered.connect(self.downgrade)
 
     def initModel(self):
         codePoint = 0
@@ -117,6 +121,16 @@ class AsmLinear(CommonListView):
                     self.focusAddress(arg.arg)
         self.lockRelease = True
 
+    def countData(self, row):
+        data = b''
+        item = self.getItem(row + 1)
+        count = 0
+        while isinstance(item, DataLine):
+            data += item.data
+            count += 1
+            item = self.getItem(row + count + 1)
+        return data
+
     def contextMenuEvent(self, event) -> None:
         menu = QMenu(self)
         index = self.indexAt(event.pos())
@@ -136,12 +150,62 @@ class AsmLinear(CommonListView):
             if arg is not None and isinstance(arg, ExprId):
                 menu.addAction(self.findDepAct)
                 self.findDepAct.triggered.connect(partial(self.findDep, item))
-        if len(item.xrefs) > 0:
+        if (item.xrefs is not None) and len(item.xrefs) > 0:
             menu.addAction(self.showXrefsAct)
         if not isinstance(item, LocLine):
             menu.addAction(self.toHexView)
             self.toHexView.triggered.connect(partial(self.toHex, item))
+        if isinstance(item, DataLine):
+            data = self.countData(index.row())
+            if (len(item.data) < BinaryAnalysis.maxSizeData) or (len(data) >= len(item.data)):
+                menu.addAction(self.upgradeAct)
+            if len(item.data) > 1:
+                menu.addAction(self.downgradeAct)
         menu.exec_(event.globalPos())
+
+    def upgrade(self):
+        index = self.selectedIndexes()[0]
+        item = self.getItemFormIndex(index)
+        data = self.countData(index.row())
+        data = item.data + data[:len(item.data)]
+        address = item.address
+        if item.typeData == 'byte':
+            typeData = 'short'
+        elif item.typeData == 'short':
+            typeData = 'int'
+        elif item.typeData == 'int':
+            typeData = 'long'
+        count = 0
+        row = index.row()
+        while count < len(data):
+            item = self.getItem(row)
+            count += len(item.data)
+            self.model.removeRow(index.row())
+            row += 1
+        newDataLine = DataLine(address, data, typeData)
+        self.model.insertRow(index.row(), newDataLine)
+        self.focusItem(index)
+
+
+    def downgrade(self):
+        index = self.selectedIndexes()[0]
+        item = self.getItem(index.row())
+        data = item.data
+        length = len(data)
+        if length == 2:
+            typeData = 'byte'
+        elif length == 4:
+            typeData = 'short'
+        elif length == 8:
+            typeData = 'int'
+        address = item.address
+        half = length // 2
+        self.model.removeRow(index.row())
+        newDataLine1 = DataLine(address, data[0: half], typeData)
+        newDataLine2 = DataLine(address + half, data[half:], typeData)
+        self.model.insertRow(index.row(), newDataLine2)
+        self.model.insertRow(index.row(), newDataLine1)
+        self.focusItem(index)
 
     def fillNop(self):
         indexs = self.selectedIndexes()

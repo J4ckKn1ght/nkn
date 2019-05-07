@@ -417,6 +417,7 @@ class DataLine(CommonItem):
         return DataLine(self.address, self.data, self.typeData)
 
 
+
 class ListInstrsView(CommonListView):
     def __init__(self, lines, loc_db):
         super(ListInstrsView, self).__init__()
@@ -424,7 +425,6 @@ class ListInstrsView(CommonListView):
             item = AsmLineNoOpcode(line, loc_db)
             self.model.appendRow(item)
         self.setSize()
-
 
 class IRLine(CommonItem):
     opList = ['=', '==', '*', '^', '&', '+', '-', ',', '?', '|']
