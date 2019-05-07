@@ -125,7 +125,7 @@ class AsmLinear(CommonListView):
         data = b''
         item = self.getItem(row + 1)
         count = 0
-        while isinstance(item, DataLine):
+        while isinstance(item, DataLine) and (item.typeData != 'string'):
             data += item.data
             count += 1
             item = self.getItem(row + count + 1)

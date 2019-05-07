@@ -64,6 +64,7 @@ class AsmCFGView(CFG):
         self.toHexAct = QAction("Follow hex view", self)
         self.taintAct = QAction("Taint Analysis")
         self.findDepAct = QAction("Find dependency")
+        self.findDepAct.triggered.connect(self.findDep)
 
     def initView(self):
         cfg = self.func.cfg
@@ -149,7 +150,6 @@ class AsmCFGView(CFG):
                 self.taintAct.triggered.connect(partial(self.taintAnalysis, line))
             if arg is not None and isinstance(arg, ExprId):
                 menu.addAction(self.findDepAct)
-                self.findDepAct.triggered.connect(partial(self.findDep, line))
         menu.exec_(event.globalPos())
 
     def toHexView(self, line):
@@ -192,7 +192,8 @@ class AsmCFGView(CFG):
                 endPoint += 1
                 queue.append(node2)
 
-    def findDep(self, item):
+    def findDep(self):
+        item = self.clickedBlock.getLineSelected()
         arg = item.args[self.clickedBlock.lastClickIndex]
         address = item.address + item.instr.l
         func = item.func
