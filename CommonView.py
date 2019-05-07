@@ -122,9 +122,12 @@ class CommonItem(QStandardItem):
 
 
 class LocLine(CommonItem):
-    def __init__(self, lockey, func):
+    def __init__(self, lockey, func, pretty=True):
         self.address = BinaryAnalysis.locDB.get_location_offset(lockey)
-        name = BinaryAnalysis.locDB.pretty_str(lockey)
+        if pretty:
+            name = BinaryAnalysis.locDB.pretty_str(lockey)
+        else:
+            name = str(lockey)
         super(LocLine, self).__init__()
         self.lockey = lockey
         self.func = func
@@ -389,7 +392,10 @@ class CommonListView(QListView):
         self.clearSelection()
         for item in self.resetList:
             if hasattr(item, 'normal'):
-                item.setText(item.normal)
+                try:
+                    item.setText(item.normal)
+                except:
+                    pass
         self.resetList.clear()
 
 

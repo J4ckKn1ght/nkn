@@ -192,7 +192,7 @@ class IRBlockView(BasicBlock):
         self.block = block
         self.lockey = lockey
         self.pretty = pretty
-        nameLine = LocLine(lockey, None)
+        nameLine = LocLine(lockey, None, pretty=self.pretty)
         self.model.appendRow(nameLine)
         index = 0
         for assignblk in block.assignblks:
