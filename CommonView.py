@@ -224,8 +224,8 @@ class AsmLineNoOpcode(CommonItem):
                 self.components.append(Component(argStr, memColor, width))
             elif isinstance(arg, ExprLoc):
                 self.components.append(Component(argStr, locColor, width))
-        self.comment = self.getComment()
-        self.components.append(Component(self.comment, commentColor, len(self.comment)))
+        # self.comment = self.getComment()
+        # self.components.append(Component(self.comment, commentColor, len(self.comment)))
         self.calculateRange()
         if self.address in func.callRefs:
             self.ref = func.callRefs[self.address]

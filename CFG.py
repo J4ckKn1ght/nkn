@@ -3,6 +3,7 @@ from PyQt5.QtGui import QPainterPath, QPen, QBrush, QPolygonF, QCursor, QPainter
 from PyQt5.QtWidgets import QAbstractItemView, QListView, QApplication, QGraphicsView, QGraphicsScene, QGraphicsItem, \
     QGraphicsPathItem
 from math import radians, pi, cos, sin, pow, ceil
+from miasm.expression.expression import ExprInt
 
 from Analysis import BinaryAnalysis
 from CommonView import LocLine, CommonListView
@@ -221,11 +222,12 @@ class CFG(QGraphicsView):
                     self.changeCFG.emit(line.ref)
                 else:
                     arg = line.args[self.clickedBlock.lastClickIndex]
-                    num = int(arg.arg)
-                    for func in BinaryAnalysis.funcs:
-                        if func.address == num:
-                            self.changeCFG.emit(func.address)
-                            super(CFG, self).mouseDoubleClickEvent(event)
-                            return
-                    self.gotoAddress.emit(int(arg.arg))
+                    if isinstance(arg, ExprInt):
+                        num = int(arg.arg)
+                        for func in BinaryAnalysis.funcs:
+                            if func.address == num:
+                                self.changeCFG.emit(func.address)
+                                super(CFG, self).mouseDoubleClickEvent(event)
+                                return
+                        self.gotoAddress.emit(int(arg.arg))
             super(CFG, self).mouseDoubleClickEvent(event)
